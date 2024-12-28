@@ -11,8 +11,12 @@ SERIES = range(1, 18)
 
 
 def extract_players():
+    print('Extracting PLAYERS data')
+    
     players = []
     for series in SERIES:
+        print(f'    Processing series: {series}')
+        
         response = requests.get(f'https://onequestionshootout.xyz/players/series_{series}.htm')
         if response.status_code != 200:
             raise ValueError(f'Could not get data for series: {series}')
@@ -38,8 +42,12 @@ def extract_players():
 
 
 def extract_episodes():
+    print('Extracting EPISODES data')
+
     episodes = []
     for series in SERIES:
+        print(f'    Processing series: {series}')
+
         response = requests.get(f'https://onequestionshootout.xyz/episodes/series_{series}.htm')
         if response.status_code != 200:
             raise ValueError(f'Could not get data for series: {series}')
