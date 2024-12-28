@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from datetime import datetime
-from enum import StrEnum
+from enum import Enum
 
 from bs4 import BeautifulSoup
 
 
-class Personnel(StrEnum):
+class Personnel(Enum):
     CHASER = 'CHASER'
     PLAYER = 'PLAYER'
     TEAM = 'TEAM'
@@ -19,12 +19,12 @@ class ParserCommon:
     def _parse_fc_result(text: str) -> tuple[str, int]:
 
         if 'Chaser' in text:
-            final_chase_winner = Personnel.CHASER
+            final_chase_winner = Personnel.CHASER.value
             final_chase_margin_time = text[-5:]
             minutes, seconds = final_chase_margin_time.split(':')
             final_chase_margin = int(minutes) * 60 + int(seconds)
         elif 'Team' in text:
-            final_chase_winner = Personnel.TEAM
+            final_chase_winner = Personnel.TEAM.value
             final_chase_margin = int(text.split(' ')[-1].strip())
         else:
             raise ValueError(f'Final chase result not recognised: {text}')
@@ -123,9 +123,9 @@ class Player(ParserCommon):
 
     def _parse_hth(text: str) -> tuple[str, int]:
         if 'Home' in text:
-            hth_winner = Personnel.PLAYER
+            hth_winner = Personnel.PLAYER.value
         elif 'Caught' in text:
-            hth_winner = Personnel.CHASER
+            hth_winner = Personnel.CHASER.value
         else:
             raise ValueError(f'HTH winner not recognised: {text}')
         hth_margin = int(text[-1])  # cannot be double digits
