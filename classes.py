@@ -74,9 +74,13 @@ class Episode(ParserCommon):
         winner, winner_margin = cls._parse_fc_result(data[7].text)
         target, extra_pushbacks = cls._parse_fc_target(data[6].text)
 
+        series = int(data[1].text.split('.')[0].strip())
+        episode = int(data[1].text.split('.')[1].strip().replace('*', ''))
+
         return Episode(
             date=cls._parse_date(data[0].text),
-            episode=int(data[1].text),
+            series=series,
+            episode=episode,
             team=data[2].text,
             chaser=data[3].text,
             players_in_final_chase=int(data[4].text),
