@@ -53,4 +53,18 @@ plt.savefig('winning_percentages_by_cash_builder.png')
 
 
 # Question 2: What are the odds of winning with an N-person team?
-breakpoint()
+episodes['team_win'] = episodes['winner'] == 'TEAM'
+win_pcs = episodes.groupby('players_in_final_chase')['team_win'].agg(['count', 'mean'])
+
+plt.figure()
+plt.title('Win % by # players in Final Chase')
+plt.xlabel('Number of Players')
+plt.xticks(range(5))
+plt.ylabel('Winning Percentage (%)')
+plt.yticks(range(0, 51, 5))
+plt.ylim([0, 50])
+plt.grid(True, linestyle='--')
+
+plt.bar(win_pcs.index, win_pcs['mean'] * 100, width=0.5)
+
+plt.savefig('winning_percentages_by_final_chase.png')
