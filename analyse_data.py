@@ -1,5 +1,7 @@
 # Run get_data.py first to download all data from the website and save to local CSVs
 import pandas as pd
+from matplotlib.colors import LinearSegmentedColormap
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 
@@ -122,3 +124,74 @@ plt.grid(True, linestyle='--')
 plt.bar(win_pcs.index, win_pcs['mean'] * 100, width=0.5)
 
 plt.savefig('winning_percentages_by_final_chase.png')
+
+# how many questions to teams get right in final chase, grouped by numbers of players in FC
+counts = episodes.groupby(['players_in_final_chase', 'target'])['episode'].agg('count').reset_index()
+counts.rename(columns={'episode': 'count'}, inplace=True)
+
+# calculate the average for each team size
+avg_target = episodes.groupby('players_in_final_chase')['target'].agg('mean').reset_index()
+print(avg_target)
+
+plt.figure()
+plt.scatter(counts['players_in_final_chase'], counts['target'], alpha=0.5, s=counts['count'])
+plt.grid(True, linestyle='--')
+plt.title('Final Chase Target by # players in Final Chase')
+plt.xlabel('Number of Players in Final Chase')
+plt.xticks(range(5))
+plt.ylabel('Final Chase Target (questions)')
+plt.yticks(range(0, 31, 2))
+plt.savefig('final_chase_correct_by_team_size.png')
+
+# What are the win rates and average earnings for teams with:
+# all players going down the middle
+# 1 player going high
+# one player going low
+count_high_offers = players.loc[players['chosen_offer'] == 1].groupby('episode')['chosen_offer'].agg('count')
+count_low_offers = players.loc[players['chosen_offer'] == -1].groupby('episode')['chosen_offer'].agg('count')
+
+episodes = episodes.merge(count_high_offers.rename('num_high_offers'), left_on='episode', right_index=True, how='left')
+episodes = episodes.merge(count_low_offers.rename('num_low_offers'), left_on='episode', right_index=True, how='left')
+episodes['num_high_offers'] = episodes['num_high_offers'].fillna(0).astype(int)
+episodes['num_low_offers'] = episodes['num_low_offers'].fillna(0).astype(int)
+episodes['num_mid_offers'] = 4 - episodes['num_high_offers'] - episodes['num_low_offers']
+
+# for every combination of team make up - what is the FC win rate and FC prize pot?
+fc_summary = episodes.groupby(['num_low_offers', 'num_mid_offers', 'num_high_offers']).agg(
+    episodes=('episode', 'count'),
+    win_pc=('team_win', 'mean'),
+    avg_prize_fund=('prize_fund', 'mean'),
+).reset_index()
+fc_summary['win_pc'] = fc_summary['win_pc'] * 100
+fc_summary['avg_prize_fund'] = fc_summary['avg_prize_fund'] / 1000
+fc_summary.sort_values(by='episodes', ascending=False, inplace=True)
+
+plt.figure()
+plt.title('Final Chase Win % by Team Offer Composition')
+plt.xlabel('Win %')
+plt.xticks(range(0, 101, 10))
+plt.ylabel('Average Prize Fund (£k)')
+plt.yticks(range(0, 41, 5))
+plt.grid(True, linestyle='--')
+
+# color based on the number of players going high
+# bias from -4 (all low) to +4 (all high)
+fc_summary['bias'] = fc_summary['num_high_offers'] - fc_summary['num_low_offers']
+
+# create a 3-stop colormap: red @ -4, green @ 0, blue @ +4
+cmap = LinearSegmentedColormap.from_list('red_green_blue', ['red', 'green', 'blue'])
+norm = mpl.colors.Normalize(vmin=-4, vmax=4)
+
+# map bias to RGBA colors
+colors = cmap(norm(fc_summary['bias'].values))
+
+# plot using bias values with the correct colormap and add a colorbar
+plt.scatter(fc_summary['win_pc'], fc_summary['avg_prize_fund'], s=fc_summary['episodes'], c=fc_summary['bias'], cmap=cmap)
+mappable = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
+mappable.set_array(fc_summary['bias'].values)
+cb = plt.colorbar(mappable, ticks=[-4, -2, 0, 2, 4], cax=plt.gca().inset_axes([1.05, 0.1, 0.03, 0.8]))
+cb.set_label('High offers - Low offers')
+
+plt.savefig('final_chase_win_percentage_by_team_offer_composition.png')
+
+breakpoint()
